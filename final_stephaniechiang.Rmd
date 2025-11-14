@@ -1,0 +1,191 @@
+---
+title: "Final Examination"
+subtitle: "DATA 605"
+author: "Stephanie Chiang"
+date: "Fall 2025"
+output: pdf_document
+---
+
+Instructions:
+
+You are required to complete this take-home final examination by the end of the last week of class. Your solutions should be uploaded in pdf format as a knitted document (with graphs, content, commentary, etc. in the pdf). This project will showcase your ability to apply the concepts learned throughout the course.
+
+The dataset you will use for this examination is provided as retail data.csv, which contains the following variables:
+
+- Product_ID: Unique identifier for each product.
+- Sales: Simulated sales numbers (in dollars).
+- Inventory_Levels: Inventory levels for each product.
+- Lead_Time_Days: The lead time in days for each product.
+- Price: The price of each product.
+- Seasonality_Index: An index representing seasonality.
+
+***
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r import}
+library(tidyverse)
+set.seed(101)
+
+df <- read.csv("synthetic_retail_data.csv")
+```
+
+# Problem 1: Business Risk and Revenue Modeling 
+
+Context: You are a data scientist working for a retail chain that models sales, inventory levels, and the impact of pricing and seasonality on revenue. Your task is to analyze various distributions that can describe sales variability and forecast potential revenue.
+
+## Part 1: Empirical and Theoretical Analysis of Distributions (5 Points)
+
+Task:
+
+1. Generate and Analyze Distributions:
+
+- X ~ Sales: Consider the Sales variable from the dataset. Assume it follows a Gamma distribution and estimate its shape and scale parameters using the fitdistr function from the MASS package.
+- Y ~ Inventory Levels: Assume that the sum of inventory levels across similar products follows a Lognormal distribution. Estimate the parameters for this distribution.
+- Z ~ Lead Time: Assume that Lead_Time_Days follows a Normal distribution. Estimate the mean and standard deviation.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+2. Calculate Empirical Expected Value and Variance:
+
+- Calculate the empirical mean and variance for all three variables.
+- Compare these empirical values with the theoretical values derived from the estimated distribution parameters.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+## Part 2: Probability Analysis and Independence Testing (5 Points)
+
+Task:
+
+1. Empirical Probabilities: For the Lead_Time_Days variable (assumed to be normally distributed), calculate the following empirical probabilities:
+
+- P(Z > mu | Z > mu - sigma)
+- P(Z > mu + sigma | Z > mu)
+- P(Z > mu + 2sigma | Z > mu)
+
+**ANSWER:**
+
+```{r}
+
+```
+
+2. Correlation and Independence:
+
+- Investigate the correlation between Sales and Price. Create a contingency table using quartiles of Sales and Price, and then evaluate the marginal and joint probabilities.
+- Use Fisher’s Exact Test and the Chi-Square Test to check for independence between Sales and Price. Discuss which test is most appropriate and why.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+# Problem 2: Advanced Forecasting and Optimization (Calculus) in Retail 
+
+Context: You are working for a large retail chain that wants to optimize pricing, inventory management, and sales forecasting using data-driven strategies. Your task is to use regression, statistical modeling, and calculus-based methods to make informed decisions.
+
+## Part 1: Descriptive and Inferential Statistics for Inventory Data (5 Points)
+
+Task:
+
+1. Inventory Data Analysis:
+
+- Generate univariate descriptive statistics for the Inventory_Levels and Sales variables.
+- Create appropriate visualizations such as histograms and scatterplots for Inventory_Levels, Sales, and Price.
+- Compute a correlation matrix for Sales, Price, and Inventory_Levels.
+- Test the hypotheses that the correlations between the variables are zero and provide a 95% confidence interval.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+2. Discussion:
+
+- Explain the meaning of your findings and discuss the implications of the correlations for inventory management. Would you be concerned about multicollinearity in a potential regression model? Why or why not?
+
+**ANSWER:**
+
+
+## Part 2: Linear Algebra and Pricing Strategy (5 Points)
+
+Task:
+
+1. Price Elasticity of Demand:
+
+- Use linear regression to model the relationship between Sales and Price (assuming Sales as the dependent variable).
+- Invert the correlation matrix from your model, and calculate the precision matrix.
+- Discuss the implications of the diagonal elements of the precision matrix (which are variance inflation factors).
+- Perform LU decomposition on the correlation matrix and interpret the results in the context of price elasticity.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+## Part 3: Calculus-Based Probability & Statistics for Sales Forecasting (5 Points)
+
+Task:
+
+1. Sales Forecasting Using Exponential Distribution:
+
+- Identify a variable in the dataset that is skewed to the right (e.g., Sales or Price) and fit an exponential distribution to this data using the fitdistr function.
+- Generate 1,000 samples from the fitted exponential distribution and compare a histogram of these samples with the original data's histogram.
+- Calculate the 5th and 95th percentiles using the cumulative distribution function (CDF) of the exponential distribution.
+- Compute a 95% confidence interval for the original data assuming normality and compare it with the empirical percentiles.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+2. Discussion:
+
+- Discuss how well the exponential distribution models the data and what this implies for forecasting future sales or pricing. Consider whether a different distribution might be more appropriate.
+
+**ANSWER:**
+
+
+
+## Part 4: Regression Modeling for Inventory Optimization (10 Points)
+
+Task:
+
+1. Multiple Regression Model:
+
+- Build a multiple regression model to predict Inventory_Levels based on Sales, Lead_Time_Days, and Price.
+- Provide a full summary of your model, including coefficients, R-squared value, and residual analysis.
+
+**ANSWER:**
+
+```{r}
+
+```
+
+2. Optimization:
+
+- Use your model to optimize inventory levels for a peak sales season, balancing minimizing stockouts with minimizing overstock. 
+
+**ANSWER:**
+
+```{r}
+
+```
+

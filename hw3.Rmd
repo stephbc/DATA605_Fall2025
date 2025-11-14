@@ -1,0 +1,393 @@
+---
+title: "Homework 3"
+subtitle: "DATA 605"
+author: "Stephanie Chiang"
+date: "Fall 2025"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+# Problem 1 - Transportation Safety
+
+Scenario: You are a data analyst at a transportation safety organization. Your task is to analyze the relationship between the speed of cars and their stopping distance using the built-in R dataset cars. This analysis will help in understanding how speed affects the stopping distance, which is crucial for improving road safety regulations.
+
+Task: Using the cars dataset in R, perform the following steps:
+
+1. Data Visualization:
+- Create a scatter plot of stopping distance (dist) as a function of speed (speed).
+- Add a regression line to the plot to visually assess the relationship.
+
+```{r}
+data(cars)
+
+ggplot(cars, aes(x = speed, y = dist)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, color = "red") +
+  labs(x = "Speed", y = "Stopping Distance")
+```
+
+2. Build a Linear Model:
+- Construct a simple linear regression model where stopping distance (dist) is the dependent variable and speed (speed) is the independent variable.
+- Summarize the model to evaluate its coefficients, R-squared value, and p-value.
+
+```{r}
+cars_mod <- lm(dist ~ speed, data = cars)
+cars_sum <- summary(cars_mod)
+cars_sum
+```
+
+3. Model Quality Evaluation:
+- Calculate and interpret the R-squared value to assess the proportion of variance in stopping distance explained by speed.
+- Perform a residual analysis to check the assumptions of the linear regression model, including linearity, homoscedasticity, independence, and normality of residuals.
+
+```{r}
+cars_sum$r.squared
+
+plot(cars_mod)
+```
+
+4. Residual Analysis:
+- Plot the residuals versus fitted values to check for any patterns.
+- Create a Q-Q plot of the residuals to assess normality.
+- Perform a Shapiro-Wilk test for normality of residuals.
+- Plot a histogram of residuals to further check for normality.
+
+```{r}
+shapiro.test(cars_mod$residuals)
+
+hist(cars_mod$residuals)
+```
+
+5. Conclusion:
+- Based on the model summary and residual analysis, determine whether the linear model is appropriate for this data. Discuss any potential violations of model assumptions and suggest improvements if necessary.
+
+
+
+# Problem 2 - Health Policy Analyst
+
+As a health policy analyst for an international organization, you are tasked with analyzing data from the World Health Organization (WHO) to inform global health policies. The dataset provided (who.csv) contains crucial health indicators for various countries from the year 2008. The variables include:
+
+- Country: Name of the country
+- LifeExp: Average life expectancy for the country in years
+- InfantSurvival: Proportion of those surviving to one year or more
+- Under5Survival: Proportion of those surviving to five years or more
+- TBFree: Proportion of the population without TB
+- PropMD: Proportion of the population who are MDs
+- PropRN: Proportion of the population who are RNs
+- PersExp: Mean personal expenditures on healthcare in US dollars at average exchange rate
+- GovtExp: Mean government expenditures per capita on healthcare, US dollars at average exchange rate
+- TotExp: Sum of personal and government expenditures
+
+Your analysis will directly influence recommendations for improving global life expectancy and the allocation of healthcare resources.
+
+### Question 1: Initial Assessment of Healthcare Expenditures and Life Expectancy
+
+Task: Create a scatterplot of LifeExp vs. TotExp to visualize the relationship between healthcare expenditures and life expectancy across countries. Then, run a simple linear regression with LifeExp as the dependent variable and TotExp as the independent variable (without transforming the variables).
+
+```{r}
+who <- read.csv("who.csv")
+```
+
+```{r}
+ggplot(who, aes(x = TotExp, y = LifeExp)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, color = "red") +
+  labs(x = "Life Expectancy", y = "Total Healthcare Expenditures")
+```
+
+```{r}
+who_mod <- lm(TotExp ~ LifeExp, data = who)
+who_sum <- summary(who_mod)
+who_sum
+```
+
+- Provide and interpret the F-statistic, R-squared value, standard error, and p-values.
+- Discuss whether the assumptions of simple linear regression (linearity, independence, homoscedasticity, and normality of residuals) are met in this analysis.
+
+Discussion: Consider the implications of your findings for health policy. Are higher healthcare expenditures generally associated with longer life expectancy? What do the assumptions of the regression model suggest about the reliability of this relationship?
+
+
+
+### Question 2: Transforming Variables for a Better Fit
+
+Task: Recognizing potential non-linear relationships, transform the variables as follows:
+
+- Raise life expectancy to the 4.6 power (LifeExp^4.6).
+- Raise total expenditures to the 0.06 power (TotExp^0.06), which is nearly a logarithmic transformation.
+
+```{r}
+who$LifeExp_trans <- who$LifeExp^4.6
+who$TotExp_trans <- who$TotExp^0.06
+```
+
+Create a new scatterplot with the transformed variables and re-run the simple linear regression model.
+
+```{r}
+ggplot(who, aes(x = TotExp_trans, y = LifeExp_trans)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = "y ~ x", se = FALSE, color = "red") +
+  labs(x = "Life Expectancy", y = "Total Healthcare Expenditures")
+```
+
+```{r}
+who_mod2 <- lm(TotExp_trans ~ LifeExp_trans, data = who)
+who_sum2 <- summary(who_mod2)
+who_sum2
+```
+
+- Provide and interpret the F-statistic, R-squared value, standard error, and p-values for the transformed model.
+- Compare this model to the original model (from Question 1). Which model provides a better fit, and why?
+
+
+Discussion: How do the transformations impact the interpretation of the relationship between healthcare spending and life expectancy? Why might the transformed model be more appropriate for policy recommendations?
+
+### Question 3: Forecasting Life Expectancy Based on Transformed Expenditures
+
+Task: Using the results from the transformed model in Question 2, forecast the life expectancy for countries with the following transformed total expenditures (TotExp^0.06):
+
+- When TotExp^0.06 = 1.5
+- When TotExp^0.06 = 2.5
+
+```{r}
+
+```
+
+Discussion: Discuss the implications of these forecasts for countries with different levels of healthcare spending. What do these predictions suggest about the potential impact of increasing healthcare expenditures on life expectancy?
+
+### Question 4: Interaction Effects in Multiple Regression
+
+Task: Build a multiple regression model to investigate the combined effect of the proportion of MDs and total healthcare expenditures on life expectancy. Specifically, use the model:
+
+- Interpret the F-statistic, R-squared value, standard error, and p-values.
+- Evaluate the interaction term (PropMD * TotExp). What does this interaction tell us about the relationship between the number of MDs, healthcare spending, and life expectancy?
+
+Discussion: How does the presence of more MDs amplify or diminish the effect of healthcare expenditures on life expectancy? What policy recommendations can be drawn from this analysis?
+
+### Question 5: Forecasting Life Expectancy with Interaction Terms
+
+Task: Using the multiple regression model from Question 4, forecast the life expectancy for a country where:
+
+- The proportion of MDs is 0.03 (PropMD = 0.03).
+- The total healthcare expenditure is 14 (TotExp = 14).
+
+Discussion: Does this forecast seem realistic? Why or why not? Consider both the potential strengths and limitations of using this model for forecasting in real-world policy settings.
+
+# Problem 3 - Retail Company Analyst
+
+### Question 1 - Inventory Cost
+
+Scenario: A retail company is planning its inventory strategy for the upcoming year. They expect to sell 110 units of a high-demand product. The storage cost is $3.75 per unit per year, and there is a fixed ordering cost of $8.25 per order. The company wants to minimize its total inventory cost.
+
+Task: Using calculus, determine the optimal lot size (the number of units to order each time) and the number of orders the company should place per year to minimize total inventory costs. Assume that the total cost function is given by:
+
+C(Q) = D/Q * S + Q/2 * H
+ 
+Where:
+
+- D is the total demand (110 units).
+- Q is the order quantity.
+- S is the fixed ordering cost per order ($8.25).
+- H is the holding cost per unit per year ($3.75).
+
+### Question 2 Revenue Maximization
+
+Scenario: A company is running an online advertising campaign. The effectiveness of the campaign, in terms of revenue generated per day, is modeled by the function:
+
+R(t) = -3150t^(-4) - 220t + 6530
+
+Where:
+
+- R(t) represents the revenue in dollars after t days of the campaign.
+
+Task: Determine the time t at which the revenue is maximized by finding the critical points of the revenue function and determining which point provides the maximum value. What is the maximum revenue the company can expect from this campaign?
+
+### Question 3 Demand Area Under Curve
+
+Scenario: A company sells a product at a price that decreases over time according to the linear demand function:
+
+P(x) = 2x - 9.3
+
+Where:
+
+P(x) is the price in dollars, and x is the quantity sold.
+
+Task: The company is interested in calculating the total revenue generated by this product between two quantity levels, x_1 = 2 and x_2 = 5, where the price still generates sales. Compute the area under the demand curve between these two points, representing the total revenue generated over this range.
+
+### Question 4 Profit Optimization
+
+Scenario: A beauty supply store sells flat irons, and the profit function associated with selling 
+x_x flat irons is given by:
+
+II(x) = x ln(9x) - (x^6)/6
+
+Where:
+
+- II(x) is the profit in dollars.
+
+Task: Use calculus to find the value of x that maximizes profit. Calculate the maximum profit that can be achieved and determine if this optimal sales level is feasible given market conditions.
+
+### Question 5 Spending Behavior
+
+Scenario: A market research firm is analyzing the spending behavior of customers in a retail store. The spending behavior is modeled by the probability density function:
+
+f(x) = 1/6x
+ 
+Where x represents spending in dollars.
+
+Task: Determine whether this function is a valid probability density function over the interval [1, e^6]. If it is, calculate the probability that a customer spends between $1 and $e^6.
+
+### Question 6 Market Share Estimation
+
+Scenario: An electronics company is analyzing its market share over a certain period. The rate of market penetration is given by:
+
+dN/dt = 500/(t^4 + 10)
+ 
+Where N(t) is the cumulative market share at time t.
+
+Task: Integrate this function to find the cumulative market share N(t) after t days, given that the initial market share N(1) = 6530. What will the market share be after 10 days?
+
+# Problem 4 Business Optimization
+
+As a data scientist at a consultancy firm, you are tasked with optimizing various business functions to improve efficiency and profitability. Taylor Series expansions are a powerful tool to approximate complex functions, allowing for simpler calculations and more straightforward decision-making. This week, you will work on Taylor Series expansions of popular functions commonly encountered in business scenarios.
+
+### Question 1 Revenue and Cost
+
+Scenario: A company’s revenue from a product can be approximated by the function R(x) = e^x, where 
+x is the number of units sold. The cost of production is given by C(x) = ln(1 + x). The company wants to maximize its profit, defined as II(x) = R(x) - C(x).
+
+Task:
+
+1. Approximate the Revenue Function: Use the Taylor Series expansion around x = 0 (Maclaurin series) to approximate the revenue function R(x) = e^x up to the second degree. Explain why this approximation might be useful in a business context.
+
+2. Approximate the Cost Function: Similarly, approximate the cost function C(x) = ln(1 + x) using its Maclaurin series expansion up to the second degree. Discuss the implications of this approximation for decision-making in production.
+
+3. Linear vs. Nonlinear Optimization: Using the Taylor Series expansions, approximate the profit function II(x). Compare the optimization results when using the linear approximations versus the original nonlinear functions. What are the differences, and when might it be more appropriate to use the approximation?
+
+Submission: Provide your solutions using R-Markdown. Include the Taylor Series expansions, the approximated functions, and a discussion of the implications of using these approximations for business decision-making.
+
+### Question 2 Financial Modeling
+
+Scenario: A financial analyst is modeling the risk associated with a new investment. The risk is proportional to the square root of the invested amount, modeled as f(x) = sqrt(x), where x is the amount invested. However, to simplify calculations, the analyst wants to use a Taylor Series expansion to approximate this function for small investments.
+
+Task:
+
+1. Maclaurin Series Expansion: Derive the Taylor Series expansion of f(x) = sqrt(x) around x = 0 up to the second degree.
+
+2. Practical Application: Use the derived series to approximate the risk for small investment amounts (e.g., when x is small). Compare the approximated risk with the actual function values for small and moderate investments. Discuss when this approximation might be useful in financial modeling.
+
+3. Optimization Scenario: Suppose the goal is to minimize risk while maintaining a certain level of investment return. Using the Taylor Series approximation, suggest an optimal investment amount x that balances risk and return.
+
+Submission: Present your results in R-Markdown, including the Taylor Series expansions, comparisons between the original and approximated functions, and your recommendations based on the analysis.
+
+### Question 3 Inventory Management
+
+Scenario: In a manufacturing process, the demand for a product decreases as the price increases, modeled by D(p) = 1 - p, where p is the price. The cost associated with producing and selling the product is modeled as C(p) = e^p. The company wants to maximize its profit, which is the difference between revenue and cost.
+
+Task:
+
+1. Taylor Series Expansion: Expand the cost function C(p) = e^p into a Taylor Series around p = 0 up to the second degree. Discuss why approximating the cost function might be useful in a pricing strategy.
+
+2. Approximating Profit: Using the Taylor Series expansion, approximate the profit function II(p) = pD(p) - C(p). Compare the results when using the original nonlinear cost function versus the approximated cost function. What differences do you observe, and when might the approximation be sufficient?
+
+Pricing Strategy: Based on the Taylor Series approximation, suggest a pricing strategy that could maximize profit. Explain how the Taylor Series approximation helps in making this decision.
+
+Submission: Include your analysis in R-Markdown, with Taylor Series expansions, comparisons of the approximated and original functions, and a discussion of the implications for pricing strategy.
+
+### Question 4 Economic Forecasting
+
+Scenario: An economist is forecasting economic growth, which can be modeled by the logarithmic function G(x) = ln(1 + x), where x represents investment in infrastructure. The government wants to predict growth under different levels of investment.
+
+Task:
+
+1. Maclaurin Series Expansion: Derive the Maclaurin Series expansion of G(x) = ln(1 + x) up to the second degree. Explain the significance of using this approximation for small values of x_x in economic forecasting.
+
+2. Approximation of Growth: Use the Taylor Series to approximate the growth for small investments. Compare this approximation with the actual growth function. Discuss the accuracy of the approximation for different ranges of x_x.
+
+3. Policy Recommendation: Using the approximation, recommend a level of investment that could achieve a target growth rate. Discuss the limitations of using Taylor Series approximations for such policy recommendations.
+
+Submission: Provide your answers in R-Markdown, with the Taylor Series expansions, comparisons between the approximated and original functions, and your investment recommendations.
+
+# Problem 5 Profit, Cost, & Pricing
+
+### Question 1 Profit Maximization
+
+Scenario: A company produces two products, A and B. The profit function for the two products is given by:
+
+II(x, y) = 30x - 2x^2 - 3xy + 24y - 4y^2
+
+Where:
+
+- x is the quantity of Product A produced and sold.
+- y is the quantity of Product B produced and sold.
+- II(x y) is the profit in dollars.
+
+Task:
+
+1. Find all local maxima, local minima, and saddle points for the profit function II(x, y).
+
+2.Write your answer(s) in the form (x, y, II(x, y)). Separate multiple points with a comma.
+
+Discussion: Discuss the implications of the results for the company’s production strategy. Which production levels maximize profit, and what risks are associated with the saddle points?
+
+### Question 2 Pricing Strategy
+
+Scenario: A supermarket sells two competing brands of a product: Brand X and Brand Y. The store manager estimates that the demand for these brands depends on their prices, given by the functions:
+
+- Demand for Brand X: 
+- Demand for Brand Y: 
+
+Where:
+
+- x is the price of Brand X in dollars.
+- y is the price of Brand Y in dollars.
+- D_x(x, y) and D_y(x, y) are the quantities demanded for Brand X and Brand Y, respectively.
+
+Task:
+
+1. Revenue Function: Find the revenue function R(x, y) for both brands combined.
+2. Optimal Pricing: Determine the prices x and y that maximize the store’s total revenue. Are there any saddle points to consider in the pricing strategy?
+
+Discussion: Explain the significance of the optimal pricing strategy and how it can be applied in a competitive retail environment.
+
+### Question 3 Cost Minimization
+
+Scenario: A manufacturing company operates two plants, one in New York and one in Chicago. The company needs to produce a total of 200 units of a product each week. The total weekly cost of production is given by:
+
+C(x, y) = (1/8)x^2 + (1/10)y^2 + 12x + 18y + 1500
+
+Where:
+
+- x is the number of units produced in New York.
+- y is the number of units produced in Chicago.
+- C(x, y) is the total cost in dollars.
+
+Task:
+
+1. Determine how many units should be produced in each plant to minimize the total weekly cost.
+2. What is the minimized total cost, and how does the distribution of production between the two plants affect overall efficiency?
+
+Discussion: Discuss the benefits of this cost-minimization strategy and any practical considerations that might influence the allocation of production between the two plants.
+
+### Question 4 Marketing Mix
+
+Scenario: A company is launching a marketing campaign that involves spending on online ads (x) and television ads (y). The effectiveness of the campaign, measured in customer reach, is modeled by the function:
+
+E(x, y) = 500x + 700y - 5x^2 - 10 xy - 8y^2
+
+Where:
+
+- x is the amount spent on online ads (in thousands of dollars).
+- y is the amount spent on television ads (in thousands of dollars).
+- E(x, y) is the estimated customer reach.
+ 
+Task:
+
+1. Find the spending levels for online and television ads that maximize customer reach.
+2. Identify any saddle points and discuss how they could affect the marketing strategy.
+
+Discussion: Explain how the results can be used to allocate the marketing budget effectively and what the company should consider if it encounters saddle points in the optimization.
