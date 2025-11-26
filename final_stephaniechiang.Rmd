@@ -27,13 +27,12 @@ knitr::opts_chunk$set(
 	message = FALSE,
 	warning = FALSE
 )
+
+library(tidyverse)
 ```
 
 ```{r import}
-library(tidyverse)
-set.seed(101)
-
-df <- read.csv("synthetic_retail_data.csv")
+retail <- read.csv("synthetic_retail_data.csv")
 ```
 
 # Problem 1: Business Risk and Revenue Modeling 
@@ -47,25 +46,117 @@ Task:
 1. Generate and Analyze Distributions:
 
 - X ~ Sales: Consider the Sales variable from the dataset. Assume it follows a Gamma distribution and estimate its shape and scale parameters using the fitdistr function from the MASS package.
+
+**ANSWER:**
+
+For a gamma distribution of the Sales variable, the shape parameter is 1.835. Scale is the inverse of the rate parameter 0.0029, or 347.0997.
+
+```{r}
+library(MASS)
+
+set.seed(101)
+
+fit_gamma <- fitdistr(retail$Sales, "gamma")
+fit_gamma
+
+scale_gamma <- 1 / fit_gamma$estimate["rate"]
+scale_gamma
+```
+
 - Y ~ Inventory Levels: Assume that the sum of inventory levels across similar products follows a Lognormal distribution. Estimate the parameters for this distribution.
+
+**ANSWER:**
+
+For a Lognormal distribution of the inventory levels, the mean of the log is 6.133 and the standard deviation of the log is 0.3633.
+
+```{r}
+set.seed(101)
+
+fit_ln <- fitdistr(retail$Inventory_Levels, "lognormal")
+fit_ln
+```
+
 - Z ~ Lead Time: Assume that Lead_Time_Days follows a Normal distribution. Estimate the mean and standard deviation.
 
 **ANSWER:**
 
-```{r}
+For a normal distribution of lead time, the mean is 6.8343 and the standard deviation is 2.0832.
 
+```{r}
+set.seed(101)
+
+fit_n <- fitdistr(retail$Lead_Time_Days, "normal")
+fit_n
 ```
 
 2. Calculate Empirical Expected Value and Variance:
 
 - Calculate the empirical mean and variance for all three variables.
-- Compare these empirical values with the theoretical values derived from the estimated distribution parameters.
 
 **ANSWER:**
 
 ```{r}
+empirical <- retail |>
+  summarise(
+    mean_sales = round(mean(Sales, na.rm = TRUE), digits = 2),
+    var_sales = round(var(Sales, na.rm = TRUE), digits = 2),
+    mean_inv = round(mean(Inventory_Levels, na.rm = TRUE), digits = 2),
+    var_inv = round(var(Inventory_Levels, na.rm = TRUE), digits = 2),
+    mean_lead = round(mean(Lead_Time_Days, na.rm = TRUE), digits = 2),
+    var_lead = round(var(Lead_Time_Days, na.rm = TRUE), digits = 2)
+  )
 
+empirical <- empirical |>
+  pivot_longer(
+    cols = 0:6, 
+    names_to = "metric",
+    values_to = "val"
+  )
+
+print(empirical)
 ```
+
+- Compare these empirical values with the theoretical values derived from the estimated distribution parameters.
+
+**ANSWER:**
+
+For the Sales variable:
+
+- estimated gamma distribution mean is shape / rate
+- estimated gamma variance is shape / rate^2
+
+For the Inventory variable:
+
+- estimated lognormal distribution mean is calculated by inversing the natural log value (or taking exp) of meanlog + sdlog^2 / 2)
+- estimated lognormal variance is (exp(sigma^2) - 1) * exp(2*mu + sigma^2)
+
+For the Lead Time variable:
+
+- estimated mean is the given mean
+- estimated variance is the given standard deviation squared
+
+The comparing the estimated values below with the empirical values in the previous problem:
+
+- the gamma distribution appears appropriate for the Sales variable, since the means are equal and the variances are close though the estimate is slightly wider
+- the lognormal distribution for the Inventory variable is the furthest from the empirical calculations, the estimated mean is somewhat higher but the variance is much larger
+- the normal distribution for Lead Time is calculated the same way as for the empirical data, so the values are the same
+
+```{r}
+estimated <- tibble(
+  metric = c("mean_sales_gamma", "var_sales_gamma", "mean_inv_ln", "var_inv_ln", "mean_lead_n", "var_lead_n"),
+  value = c(
+    round(fit_gamma$estimate["shape"] / fit_gamma$estimate["rate"], digits = 2),
+    round(fit_gamma$estimate["shape"] / (fit_gamma$estimate["rate"]^2), digits = 2),
+    round(exp(fit_ln$estimate["meanlog"] + (fit_ln$estimate["sdlog"]^2 / 2)), digits = 2), 
+    round((exp(fit_ln$estimate["sdlog"]^2) - 1) * exp(2*fit_ln$estimate["meanlog"] + fit_ln$estimate["sdlog"]^2), digits = 2),
+    round(fit_n$estimate["mean"], digits = 2), 
+    round(fit_n$estimate["sd"]^2, digits = 2)
+  )
+)
+
+estimated
+```
+
 
 ## Part 2: Probability Analysis and Independence Testing (5 Points)
 
@@ -86,13 +177,30 @@ Task:
 2. Correlation and Independence:
 
 - Investigate the correlation between Sales and Price. Create a contingency table using quartiles of Sales and Price, and then evaluate the marginal and joint probabilities.
+
+**ANSWER:**
+
+At 0.1027, the correlation calculated below is positive but appears weak.
+
+```{r}
+cor(retail$Sales, retail$Price)
+```
+
+
+
+```{r}
+cor(retail$Sales, retail$Price)
+```
+
 - Use Fisher’s Exact Test and the Chi-Square Test to check for independence between Sales and Price. Discuss which test is most appropriate and why.
+
 
 **ANSWER:**
 
 ```{r}
 
 ```
+
 
 # Problem 2: Advanced Forecasting and Optimization (Calculus) in Retail 
 
@@ -175,8 +283,13 @@ Task:
 
 **ANSWER:**
 
-```{r}
+The multiple linear regression below models the effects of Sales, Lead_Time_Days, and Price as the x values and Inventory_Levels as the y, or outcome variable. 
 
+The summary 
+
+```{r}
+mod_41 <- lm("Inventory_Levels ~ Sales + Lead_Time_Days + Price", data = retail)
+summary(mod_41)
 ```
 
 2. Optimization:
@@ -186,6 +299,7 @@ Task:
 **ANSWER:**
 
 ```{r}
-
+pred_41 <- predict(mod_41)
+pred_41
 ```
 
