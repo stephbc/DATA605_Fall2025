@@ -165,13 +165,34 @@ Task:
 1. Empirical Probabilities: For the Lead_Time_Days variable (assumed to be normally distributed), calculate the following empirical probabilities:
 
 - P(Z > mu | Z > mu - sigma)
+
+**ANSWER:**
+
+```{r}
+mu <- mean(retail$Lead_Time_Days, na.rm = TRUE)
+sigma <- sd(retail$Lead_Time_Days, na.rm = TRUE)
+
+# helper function to get the probability of Z being greater than a given value
+prob_z_greater <- function(x) 1 - pnorm(x, mean = mu, sd = sigma)
+
+# conditional probability of A | B simplifies to P(A) / P(B)
+prob_z_greater(mu) / prob_z_greater(mu - sigma)
+```
+
 - P(Z > mu + sigma | Z > mu)
+
+**ANSWER:**
+
+```{r}
+prob_z_greater(mu + sigma) / prob_z_greater(mu)
+```
+
 - P(Z > mu + 2sigma | Z > mu)
 
 **ANSWER:**
 
 ```{r}
-
+prob_z_greater(mu + 2*sigma) / prob_z_greater(mu)
 ```
 
 2. Correlation and Independence:
@@ -184,21 +205,51 @@ At 0.1027, the correlation calculated below is positive but appears weak.
 
 ```{r}
 cor(retail$Sales, retail$Price)
+
+retail_quartiles <- retail |>
+  mutate(
+    Sales_Q = cut(Sales,
+                  breaks = quantile(Sales, probs = seq(0, 1, 0.25), na.rm = TRUE),
+                  include.lowest = TRUE,
+                  labels = c("Q1", "Q2", "Q3", "Q4")),
+    Price_Q = cut(Price,
+                  breaks = quantile(Price, probs = seq(0, 1, 0.25), na.rm = TRUE),
+                  include.lowest = TRUE,
+                  labels = c("Q1", "Q2", "Q3", "Q4"))
+  )
 ```
 
-
+- contingency table: shows counts of products in each (Sales quartile × Price quartile) cell
+- joint probabilities: probabilities that an product falls in both a Sales and Price quartile
+- marginal probabilities: probabilities of each Sales or Price quartile independently
 
 ```{r}
-cor(retail$Sales, retail$Price)
+# contingency table
+cont_table <- table(retail_quartiles$Sales_Q, retail_quartiles$Price_Q)
+cont_table
+
+# joint probabilities
+prop.table(cont_table)
+
+# marginal probabilities
+prop.table(rowSums(cont_table)) # by sales
+prop.table(colSums(cont_table)) # by price
 ```
 
 - Use Fisher’s Exact Test and the Chi-Square Test to check for independence between Sales and Price. Discuss which test is most appropriate and why.
 
-
 **ANSWER:**
 
-```{r}
+Fisher’s Exact Test = exact, safe for small counts, slower for large tables.
 
+Chi-square Test = approximate, works for large tables, may be inaccurate with small expected counts.
+
+```{r}
+fisher_test <- fisher.test(cont_table)
+fisher_test
+
+chi_test <- chisq.test(cont_table, correct = FALSE)
+chi_test
 ```
 
 
@@ -213,8 +264,29 @@ Task:
 1. Inventory Data Analysis:
 
 - Generate univariate descriptive statistics for the Inventory_Levels and Sales variables.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Create appropriate visualizations such as histograms and scatterplots for Inventory_Levels, Sales, and Price.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Compute a correlation matrix for Sales, Price, and Inventory_Levels.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Test the hypotheses that the correlations between the variables are zero and provide a 95% confidence interval.
 
 **ANSWER:**
@@ -237,8 +309,29 @@ Task:
 1. Price Elasticity of Demand:
 
 - Use linear regression to model the relationship between Sales and Price (assuming Sales as the dependent variable).
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Invert the correlation matrix from your model, and calculate the precision matrix.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Discuss the implications of the diagonal elements of the precision matrix (which are variance inflation factors).
+
+**ANSWER:**
+
+```{r}
+
+```
+
 - Perform LU decomposition on the correlation matrix and interpret the results in the context of price elasticity.
 
 **ANSWER:**
@@ -254,14 +347,62 @@ Task:
 1. Sales Forecasting Using Exponential Distribution:
 
 - Identify a variable in the dataset that is skewed to the right (e.g., Sales or Price) and fit an exponential distribution to this data using the fitdistr function.
+
+**ANSWER:**
+
+Based on the quick plot below, Sales has a right skew, so the exponential distribution is fitted on Sales:
+
+```{r}
+ggplot(data = retail, aes(x = Sales)) +
+  geom_histogram()
+
+set.seed(101)
+
+fit_exp <- fitdistr(retail$Sales, "exponential")
+fit_exp
+```
+
 - Generate 1,000 samples from the fitted exponential distribution and compare a histogram of these samples with the original data's histogram.
+
+**ANSWER:**
+
+```{r}
+set.seed(101)
+
+exp_samples <- rexp(1000, rate = fit_exp$estimate["rate"])
+
+ggplot(data = data.frame(exp_samples), aes(x = exp_samples)) +
+  geom_histogram()
+```
+
 - Calculate the 5th and 95th percentiles using the cumulative distribution function (CDF) of the exponential distribution.
+
+**ANSWER:**
+
+```{r}
+qexp(0.05, rate = fit_exp$estimate["rate"])
+qexp(0.95, rate = fit_exp$estimate["rate"])
+```
+
 - Compute a 95% confidence interval for the original data assuming normality and compare it with the empirical percentiles.
 
 **ANSWER:**
 
 ```{r}
+mu_hat <- mean(retail$Sales, na.rm = TRUE)
+sigma_hat <- sd(retail$Sales, na.rm = TRUE)
 
+ci_lower <- mu_hat - 1.96 * sigma_hat
+ci_upper <- mu_hat + 1.96 * sigma_hat
+
+empirical_lower <- quantile(retail$Sales, 0.025, na.rm = TRUE)
+empirical_upper <- quantile(retail$Sales, 0.975, na.rm = TRUE)
+
+data.frame(
+  Method = c("Normal CI", "Empirical Percentiles"),
+  Lower = c(ci_lower, empirical_lower),
+  Upper = c(ci_upper, empirical_upper)
+)
 ```
 
 2. Discussion:
@@ -285,11 +426,28 @@ Task:
 
 The multiple linear regression below models the effects of Sales, Lead_Time_Days, and Price as the x values and Inventory_Levels as the y, or outcome variable. 
 
-The summary 
+Coefficients:
+
+Positive coefficient → predictor increases Inventory_Levels
+Negative coefficient → predictor decreases Inventory_Levels
+Magnitude → size of effect per unit increase in predictor
+
+R-squared:
+
+Closer to 1 → model explains more variance in Inventory_Levels
+
+Adjusted R-squared accounts for the number of predictors
+
+Residual plots:
+
+Residuals randomly scattered → linear model assumptions likely valid
+
+Patterns (curvature, funnel shape) → potential violations
 
 ```{r}
 mod_41 <- lm("Inventory_Levels ~ Sales + Lead_Time_Days + Price", data = retail)
 summary(mod_41)
+plot(mod_41)
 ```
 
 2. Optimization:
