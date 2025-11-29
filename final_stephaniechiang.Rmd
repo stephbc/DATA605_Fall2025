@@ -29,6 +29,8 @@ knitr::opts_chunk$set(
 )
 
 library(tidyverse)
+
+set.seed(101)
 ```
 
 ```{r import}
@@ -54,8 +56,6 @@ For a gamma distribution of the Sales variable, the shape parameter is 1.835. Sc
 ```{r}
 library(MASS)
 
-set.seed(101)
-
 fit_gamma <- fitdistr(retail$Sales, "gamma")
 fit_gamma
 
@@ -70,8 +70,6 @@ scale_gamma
 For a Lognormal distribution of the inventory levels, the mean of the log is 6.133 and the standard deviation of the log is 0.3633.
 
 ```{r}
-set.seed(101)
-
 fit_ln <- fitdistr(retail$Inventory_Levels, "lognormal")
 fit_ln
 ```
@@ -83,8 +81,6 @@ fit_ln
 For a normal distribution of lead time, the mean is 6.8343 and the standard deviation is 2.0832.
 
 ```{r}
-set.seed(101)
-
 fit_n <- fitdistr(retail$Lead_Time_Days, "normal")
 fit_n
 ```
@@ -268,6 +264,7 @@ Task:
 **ANSWER:**
 
 Below are the univariate descriptive statistics of the cenral tendencies for Inventory and Sales:
+
 - mean
 - median
 - min
@@ -310,6 +307,18 @@ ggplot(retail, aes(x=Price)) +
   theme_minimal()
 ```
 
+```{r}
+ggplot(retail, aes(x=Inventory_Levels, y=Sales)) +
+  geom_point() +
+  labs(title = "Inventory Levels vs Sales") +
+  theme_minimal()
+
+ggplot(retail, aes(x=Price, y=Sales)) +
+  geom_point() +
+  labs(title = "Price vs Sales") +
+  theme_minimal()
+```
+
 - Compute a correlation matrix for Sales, Price, and Inventory_Levels.
 
 **ANSWER:**
@@ -337,7 +346,13 @@ cor.test(retail$Price, retail$Inventory_Levels)
 
 **ANSWER:**
 
+The tests above indicate:
 
+- all correlations are small
+- all p-values are larger than 0.05
+- all confidence intervals include 0
+
+This means there are no significant correlations between Sales, Price nor Inventory Levels. There is also no expected multicollinearity for regression modeling due to the low correlation values. 
 
 ## Part 2: Linear Algebra and Pricing Strategy (5 Points)
 
@@ -350,7 +365,8 @@ Task:
 **ANSWER:**
 
 ```{r}
-
+mod_22 <- lm("Sales ~ Price", data = retail)
+summary(mod_22)
 ```
 
 - Invert the correlation matrix from your model, and calculate the precision matrix.
@@ -358,23 +374,35 @@ Task:
 **ANSWER:**
 
 ```{r}
+cor_22 <- cor(retail[, c("Sales", "Price")],
+    use = "complete.obs")
 
+solve(cor_22)
 ```
 
 - Discuss the implications of the diagonal elements of the precision matrix (which are variance inflation factors).
 
 **ANSWER:**
 
-```{r}
+The diagonal numbers (upper left, lower right) in the precision matrix are VIFs for Sales and Price and are another measure multicollinearity.
 
-```
+Since both diagonal values are about 1.01, there is no multicollinearity. This means Price appears independent on Sales.
 
 - Perform LU decomposition on the correlation matrix and interpret the results in the context of price elasticity.
 
 **ANSWER:**
 
-```{r}
+The LU decomposition below shows how:
 
+- The L (lower) matrix shows little dependence of Price on Sales
+- The U (upper) matrix shows little dependence of Sales on Price
+
+Price elasticity refers to how Sales changes in relation to Price changes. So since there is no strong causal or structural link, Sales is not expected to significantly change if prices change - meaning low elasticity.
+
+```{r}
+library(pracma)
+
+lu(cor_22)
 ```
 
 ## Part 3: Calculus-Based Probability & Statistics for Sales Forecasting (5 Points)
@@ -387,14 +415,9 @@ Task:
 
 **ANSWER:**
 
-Based on the quick plot below, Sales has a right skew, so the exponential distribution is fitted on Sales:
+Based on the histograms from a previous section, Sales has a right skew, so the exponential distribution is fitted on Sales:
 
 ```{r}
-ggplot(data = retail, aes(x = Sales)) +
-  geom_histogram()
-
-set.seed(101)
-
 fit_exp <- fitdistr(retail$Sales, "exponential")
 fit_exp
 ```
@@ -403,9 +426,9 @@ fit_exp
 
 **ANSWER:**
 
-```{r}
-set.seed(101)
+Both histograms are right-skewed but the simulated samples are "cleaner" with larger axes (due to the larger sample size) and a longer, smoother tail.
 
+```{r}
 exp_samples <- rexp(1000, rate = fit_exp$estimate["rate"])
 
 ggplot(data = data.frame(exp_samples), aes(x = exp_samples)) +
@@ -416,14 +439,21 @@ ggplot(data = data.frame(exp_samples), aes(x = exp_samples)) +
 
 **ANSWER:**
 
+The CDF of the exponential distribution is calculated using `qexp()`.
+
 ```{r}
-qexp(0.05, rate = fit_exp$estimate["rate"])
-qexp(0.95, rate = fit_exp$estimate["rate"])
+exp_lower <- qexp(0.05, rate = fit_exp$estimate["rate"])
+exp_lower
+
+exp_upper <- qexp(0.95, rate = fit_exp$estimate["rate"])
+exp_upper
 ```
 
 - Compute a 95% confidence interval for the original data assuming normality and compare it with the empirical percentiles.
 
 **ANSWER:**
+
+The below calculations, for the empirical and normal distributions are compared in a simple table, along with the exponential. The normal CI underestimates the lower bound because the distribution is heavily right-skewed. This results in an unrealistic negative lower bound, and a much lower value for the upper bound compared to the empirical data.
 
 ```{r}
 mu_hat <- mean(retail$Sales, na.rm = TRUE)
@@ -436,9 +466,9 @@ empirical_lower <- quantile(retail$Sales, 0.025, na.rm = TRUE)
 empirical_upper <- quantile(retail$Sales, 0.975, na.rm = TRUE)
 
 data.frame(
-  Method = c("Normal CI", "Empirical Percentiles"),
-  Lower = c(ci_lower, empirical_lower),
-  Upper = c(ci_upper, empirical_upper)
+  Method = c("Normal CI", "Empirical Percentiles", "Exponential CI"),
+  Lower = c(ci_lower, empirical_lower, exp_lower),
+  Upper = c(ci_upper, empirical_upper, exp_upper)
 )
 ```
 
@@ -448,6 +478,7 @@ data.frame(
 
 **ANSWER:**
 
+The exponential distribution fits this Sales data well (or at least better than normality). The bounds are slightly wider but the right skew is handled and risk is low of underestimating or overestimating for future sales. 
 
 
 ## Part 4: Regression Modeling for Inventory Optimization (10 Points)
@@ -461,25 +492,13 @@ Task:
 
 **ANSWER:**
 
-The multiple linear regression below models the effects of Sales, Lead_Time_Days, and Price as the x values and Inventory_Levels as the y, or outcome variable. 
+The multiple linear regression below models the effects of Sales, Lead_Time_Days, and Price as the x values and Inventory_Levels as the y, or outcome variable, with residual plots. 
 
-Coefficients:
+Coefficients: Lead_Time_Days has a positive, larger coefficient, representing an increase in Inventory_Levels. Sales and Price are negative and should decrease Inventory_Levels but the values are small, so the effects should be minimal.
 
-Positive coefficient → predictor increases Inventory_Levels
-Negative coefficient → predictor decreases Inventory_Levels
-Magnitude → size of effect per unit increase in predictor
+R-squared: Both multiple R-squared and adjusted R-squared are small, so x variables generally have weak influence on the y. 
 
-R-squared:
-
-Closer to 1 → model explains more variance in Inventory_Levels
-
-Adjusted R-squared accounts for the number of predictors
-
-Residual plots:
-
-Residuals randomly scattered → linear model assumptions likely valid
-
-Patterns (curvature, funnel shape) → potential violations
+Residual plots: The Residuals vs Fitted are a randomly scattered cloud around 0 and the QQ plot sticks close the line. Overall the assumptions of linear regression appear satisfied.
 
 ```{r}
 mod_41 <- lm("Inventory_Levels ~ Sales + Lead_Time_Days + Price", data = retail)
@@ -493,8 +512,21 @@ plot(mod_41)
 
 **ANSWER:**
 
+Using Sales, the peak sales season can be estimated based on the 90% percentile of historical data. Then, the multiple linear regression model above is used to make the predictions.
+
+For the baseline amount of stock, we just take the predicted mean sales with `pred_41[, "fit"]`.
+
+For a buffer to handle uncertain demand, we can add that to the product of the standard deviation of the residuals and the z-score. This would represent the possible error in prediction.
+
+The following predictions should minimize both overstocking and out-of-stock times. 
+
 ```{r}
-pred_41 <- predict(mod_41)
-pred_41
+peak_sales_est <- retail |>
+  summarize(Peak_Demand = quantile(Sales, 0.90))
+
+pred_41 <- predict(mod_41, newdata = retail, interval = "prediction")
+
+Inventory_opt <- pred_41[, "fit"] + qnorm(0.95) * summary(mod_41)$sigma
+Inventory_opt
 ```
 
