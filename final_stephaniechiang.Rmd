@@ -203,6 +203,12 @@ prob_z_greater(mu + 2*sigma) / prob_z_greater(mu)
 
 At 0.1027, the correlation calculated below is positive but appears weak.
 
+Then, by breaking the values into quartile bins, the following are created:
+
+- contingency table that shows the frequencies of the combinations of the Sales (in the rows) and the Prices (in the columns)
+- joint probabilities table that shows the probability of an observation falling in both a Sales and Price quartile
+- marginal probabilities table that shows the probability of one of either Sales or Price occurring independently, without regard to the other
+
 ```{r}
 cor(retail$Sales, retail$Price)
 
@@ -217,39 +223,33 @@ retail_quartiles <- retail |>
                   include.lowest = TRUE,
                   labels = c("Q1", "Q2", "Q3", "Q4"))
   )
-```
 
-- contingency table: shows counts of products in each (Sales quartile × Price quartile) cell
-- joint probabilities: probabilities that an product falls in both a Sales and Price quartile
-- marginal probabilities: probabilities of each Sales or Price quartile independently
-
-```{r}
 # contingency table
 cont_table <- table(retail_quartiles$Sales_Q, retail_quartiles$Price_Q)
 cont_table
 
 # joint probabilities
-prop.table(cont_table)
+joint_table <- prop.table(cont_table)
+joint_table
 
 # marginal probabilities
-prop.table(rowSums(cont_table)) # by sales
-prop.table(colSums(cont_table)) # by price
+sales_marg <- prop.table(margin.table(cont_table, 1))
+sales_marg
+
+price_marg <- prop.table(margin.table(cont_table, 2))
+price_marg
 ```
 
 - Use Fisher’s Exact Test and the Chi-Square Test to check for independence between Sales and Price. Discuss which test is most appropriate and why.
 
 **ANSWER:**
 
-Fisher’s Exact Test = exact, safe for small counts, slower for large tables.
+Fisher’s Exact Test is only good for small tables, so `fisher.test()` actually errors when running on this contingency table. Pearson's Chi-square Test is works for larger contingency tables like this one, but is more of an approximation.
 
-Chi-square Test = approximate, works for large tables, may be inaccurate with small expected counts.
+The P-value of 0.8514 is very large, we can fail to reject the null hypothesis - we can assume the independence of the variables. 
 
 ```{r}
-fisher_test <- fisher.test(cont_table)
-fisher_test
-
-chi_test <- chisq.test(cont_table, correct = FALSE)
-chi_test
+chisq.test(cont_table)
 ```
 
 
@@ -267,8 +267,23 @@ Task:
 
 **ANSWER:**
 
-```{r}
+Below are the univariate descriptive statistics of the cenral tendencies for Inventory and Sales:
+- mean
+- median
+- min
+- max
+- quartiles
+- standard deviation
+- IQR for interquartile range
 
+```{r}
+summary(retail$Inventory_Levels)
+sd(retail$Inventory_Levels)
+IQR(retail$Inventory_Levels)
+
+summary(retail$Sales)
+sd(retail$Sales)
+IQR(retail$Sales)
 ```
 
 - Create appropriate visualizations such as histograms and scatterplots for Inventory_Levels, Sales, and Price.
@@ -276,7 +291,23 @@ Task:
 **ANSWER:**
 
 ```{r}
+# Inventory_Levels
+ggplot(retail, aes(x=Inventory_Levels)) +
+  geom_histogram() +
+  labs(title = "Inventory Levels histogram") +
+  theme_minimal()
 
+# Sales
+ggplot(retail, aes(x=Sales)) +
+  geom_histogram() +
+  labs(title = "Sales histogram") +
+  theme_minimal()
+
+# Price
+ggplot(retail, aes(x=Price)) +
+  geom_histogram() +
+  labs(title = "Price histogram") +
+  theme_minimal()
 ```
 
 - Compute a correlation matrix for Sales, Price, and Inventory_Levels.
@@ -284,15 +315,20 @@ Task:
 **ANSWER:**
 
 ```{r}
-
+cor(retail[, c("Sales", "Price", "Inventory_Levels")],
+    use = "complete.obs")
 ```
 
 - Test the hypotheses that the correlations between the variables are zero and provide a 95% confidence interval.
 
 **ANSWER:**
 
-```{r}
+The correlations are tested with 95% confidence intervals for each combination below. Each pair is close to 0.
 
+```{r}
+cor.test(retail$Sales, retail$Price)
+cor.test(retail$Sales, retail$Inventory_Levels)
+cor.test(retail$Price, retail$Inventory_Levels)
 ```
 
 2. Discussion:
@@ -300,6 +336,7 @@ Task:
 - Explain the meaning of your findings and discuss the implications of the correlations for inventory management. Would you be concerned about multicollinearity in a potential regression model? Why or why not?
 
 **ANSWER:**
+
 
 
 ## Part 2: Linear Algebra and Pricing Strategy (5 Points)
