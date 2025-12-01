@@ -10,6 +10,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+set.seed(101)
 ```
 
 # Problem 1 - Transportation Safety
@@ -19,8 +20,11 @@ Scenario: You are a data analyst at a transportation safety organization. Your t
 Task: Using the cars dataset in R, perform the following steps:
 
 1. Data Visualization:
+
 - Create a scatter plot of stopping distance (dist) as a function of speed (speed).
 - Add a regression line to the plot to visually assess the relationship.
+
+**ANSWER:**
 
 ```{r}
 data(cars)
@@ -32,30 +36,44 @@ ggplot(cars, aes(x = speed, y = dist)) +
 ```
 
 2. Build a Linear Model:
+
 - Construct a simple linear regression model where stopping distance (dist) is the dependent variable and speed (speed) is the independent variable.
 - Summarize the model to evaluate its coefficients, R-squared value, and p-value.
 
+**ANSWER:**
+
 ```{r}
 cars_mod <- lm(dist ~ speed, data = cars)
-cars_sum <- summary(cars_mod)
-cars_sum
+summary(cars_mod)
 ```
 
 3. Model Quality Evaluation:
+
 - Calculate and interpret the R-squared value to assess the proportion of variance in stopping distance explained by speed.
 - Perform a residual analysis to check the assumptions of the linear regression model, including linearity, homoscedasticity, independence, and normality of residuals.
 
-```{r}
-cars_sum$r.squared
+**ANSWER:**
 
+The R-squared of the model above is 0.6511, which means that 65.11% of the variation in the y response variable, stopping distance, is explained by this model. Since a higher R^2 is generally better, this model seems to be a moderate fit for this data.
+
+Below, the residual plots show that:
+
+- linearity: the residuals vs fitted values are scattered, but with a faint gentle curve along 0
+- homoscedasticity: the variance pf the residuals also looks ok, with a bit of a funnel shape at the ends
+- normality of residuals: the Q-Q plot shows the majority of points are along the line, with a small tail rising on the right
+
+```{r}
 plot(cars_mod)
 ```
 
 4. Residual Analysis:
+
 - Plot the residuals versus fitted values to check for any patterns.
 - Create a Q-Q plot of the residuals to assess normality.
 - Perform a Shapiro-Wilk test for normality of residuals.
 - Plot a histogram of residuals to further check for normality.
+
+**ANSWER:**
 
 ```{r}
 shapiro.test(cars_mod$residuals)
@@ -64,8 +82,14 @@ hist(cars_mod$residuals)
 ```
 
 5. Conclusion:
+
 - Based on the model summary and residual analysis, determine whether the linear model is appropriate for this data. Discuss any potential violations of model assumptions and suggest improvements if necessary.
 
+**ANSWER:**
+
+The residual histogram appears to have a bit of a right tail and the Shapiro-Wilk test shows a W of 0.94509, so almost a normal distribution, but with a low 0.02 p-value, this means some non-normality.
+
+This means that some of the assumptions (normality, linearity and homoscedasticity) are technically violated but not by much. This model may be a good start but needs some adjustments, like variable transformation. 
 
 
 # Problem 2 - Health Policy Analyst
@@ -89,6 +113,8 @@ Your analysis will directly influence recommendations for improving global life 
 
 Task: Create a scatterplot of LifeExp vs. TotExp to visualize the relationship between healthcare expenditures and life expectancy across countries. Then, run a simple linear regression with LifeExp as the dependent variable and TotExp as the independent variable (without transforming the variables).
 
+**ANSWER:**
+
 ```{r}
 who <- read.csv("who.csv")
 ```
@@ -101,17 +127,25 @@ ggplot(who, aes(x = TotExp, y = LifeExp)) +
 ```
 
 ```{r}
-who_mod <- lm(TotExp ~ LifeExp, data = who)
-who_sum <- summary(who_mod)
-who_sum
+who_mod <- lm(LifeExp ~ TotExp, data = who)
+summary(who_mod)
+plot(who_mod)
 ```
 
 - Provide and interpret the F-statistic, R-squared value, standard error, and p-values.
 - Discuss whether the assumptions of simple linear regression (linearity, independence, homoscedasticity, and normality of residuals) are met in this analysis.
 
-Discussion: Consider the implications of your findings for health policy. Are higher healthcare expenditures generally associated with longer life expectancy? What do the assumptions of the regression model suggest about the reliability of this relationship?
+**ANSWER:**
 
+The F-statistic above is 65.26 and the p-value is tiny, meaning the model is statistically significant and TotExp is a predictor of LifeExp. Hoever, the R-squared means the model only explains around 25% of the variation on LifeExp, meaning there are probably other factors involved. 
 
+The residual plots all appear to show deviations from the required assumptions though, so there is unreliability in the model and needs investigation.
+
+- Discussion: Consider the implications of your findings for health policy. Are higher healthcare expenditures generally associated with longer life expectancy? What do the assumptions of the regression model suggest about the reliability of this relationship?
+
+**ANSWER:**
+
+Based on the above model and diagnostics, an association between the variables exists but is small in magnitude and difficult to reliably make prediction on without some tweaks or additional investigation.
 
 ### Question 2: Transforming Variables for a Better Fit
 
@@ -120,12 +154,16 @@ Task: Recognizing potential non-linear relationships, transform the variables as
 - Raise life expectancy to the 4.6 power (LifeExp^4.6).
 - Raise total expenditures to the 0.06 power (TotExp^0.06), which is nearly a logarithmic transformation.
 
+**ANSWER:**
+
 ```{r}
 who$LifeExp_trans <- who$LifeExp^4.6
 who$TotExp_trans <- who$TotExp^0.06
 ```
 
 Create a new scatterplot with the transformed variables and re-run the simple linear regression model.
+
+**ANSWER:**
 
 ```{r}
 ggplot(who, aes(x = TotExp_trans, y = LifeExp_trans)) +
@@ -135,16 +173,27 @@ ggplot(who, aes(x = TotExp_trans, y = LifeExp_trans)) +
 ```
 
 ```{r}
-who_mod2 <- lm(TotExp_trans ~ LifeExp_trans, data = who)
-who_sum2 <- summary(who_mod2)
-who_sum2
+who_mod2 <- lm(LifeExp_trans ~ TotExp_trans, data = who)
+summary(who_mod2)
+plot(who_mod2)
 ```
 
 - Provide and interpret the F-statistic, R-squared value, standard error, and p-values for the transformed model.
 - Compare this model to the original model (from Question 1). Which model provides a better fit, and why?
 
+**ANSWER:**
 
-Discussion: How do the transformations impact the interpretation of the relationship between healthcare spending and life expectancy? Why might the transformed model be more appropriate for policy recommendations?
+The F-statistic for the transformed variables is much higher at 507.7 and the p-value is still miniscule, meaning the model is statistically significant and TotExp_trans is a strong predictor of LifeExp_trans. The R-squared is also much higher at 0.73
+
+The residual plots also look better with more random scatter in the residuals vs fitted values plot and the QQ-plot tail hewingmuhc closer to the line except on the left.
+
+This model is a better fit for the data overall, with a stronger predictive relationship and better handling of linear regression assumptions in the residuals.
+
+- Discussion: How do the transformations impact the interpretation of the relationship between healthcare spending and life expectancy? Why might the transformed model be more appropriate for policy recommendations?
+
+**ANSWER:**
+
+Transforming variables handles the outliers by reducing sensitivity to large variations. Especially when it comes to spending and dollar values, total expenditures by country will be affected by many other factors that can't be accounted for in the data like currency, politics and culture, and lifestyle. And life expectancy doesn't increase without limits, so no amount of spending can get humans of any country to double that of any other. So transforming the variables linearizes a non-linear relationship and changes the units to someting more interpretable (like a percent change instead of a raw number).
 
 ### Question 3: Forecasting Life Expectancy Based on Transformed Expenditures
 
@@ -153,11 +202,23 @@ Task: Using the results from the transformed model in Question 2, forecast the l
 - When TotExp^0.06 = 1.5
 - When TotExp^0.06 = 2.5
 
-```{r}
+**ANSWER:**
 
+We calculate using y = mx + b, where b is the model's intercept of -736527910, and m is the coefficient 620060216 of TotExp_trans:
+
+```{r}
+q3_pred_1.5 <- -736527910 + 620060216 * 1.5
+q3_pred_2.5 <- -736527910 + 620060216 * 2.5
+
+print(q3_pred_2.5)
+print(q3_pred_1.5)
 ```
 
 Discussion: Discuss the implications of these forecasts for countries with different levels of healthcare spending. What do these predictions suggest about the potential impact of increasing healthcare expenditures on life expectancy?
+
+**ANSWER:**
+
+The above shows that increasing expenditures from 1.5 to 2.5 resulted in a 4.2 times increase in life expectancy. The values are on a different scale than years right now but the general idea is that increasing healthcare spending increases life expectancy, but only to a point.
 
 ### Question 4: Interaction Effects in Multiple Regression
 
@@ -166,7 +227,18 @@ Task: Build a multiple regression model to investigate the combined effect of th
 - Interpret the F-statistic, R-squared value, standard error, and p-values.
 - Evaluate the interaction term (PropMD * TotExp). What does this interaction tell us about the relationship between the number of MDs, healthcare spending, and life expectancy?
 
+**ANSWER:**
+
+```{r}
+who_mod3 <- lm(LifeExp ~ TotExp + PropMD, data = who)
+summary(who_mod3)
+```
+
 Discussion: How does the presence of more MDs amplify or diminish the effect of healthcare expenditures on life expectancy? What policy recommendations can be drawn from this analysis?
+
+**ANSWER:**
+
+More MDs significantly affects life expectancy, with a coefficient of 650.8. So countries with higher PropMD would benefit more from higher healthcare expenditures, and countries with lower PropMD would gain relatively little from additional spending. One policy recommendation would be to focus more on providing resources to increase the number of healthcare workers.
 
 ### Question 5: Forecasting Life Expectancy with Interaction Terms
 
@@ -175,7 +247,19 @@ Task: Using the multiple regression model from Question 4, forecast the life exp
 - The proportion of MDs is 0.03 (PropMD = 0.03).
 - The total healthcare expenditure is 14 (TotExp = 14).
 
+**ANSWER:**
+
+```{r}
+q5_pred <- 63.97 + (0.00005378*14) + (650.8*0.03)
+q5_pred
+```
+
 Discussion: Does this forecast seem realistic? Why or why not? Consider both the potential strengths and limitations of using this model for forecasting in real-world policy settings.
+
+**ANSWER:**
+
+Yes, 83.49 years seems to be a realistic life expectancy. Plugging in a proportion of MDs of 3% seems fantastically high though.
+
 
 # Problem 3 - Retail Company Analyst
 
@@ -194,6 +278,33 @@ Where:
 - S is the fixed ordering cost per order ($8.25).
 - H is the holding cost per unit per year ($3.75).
 
+**ANSWER:**
+
+The optimal number of units per order is 22 and the number of orders per year is 5.
+
+```{r}
+library(Deriv)
+
+# given params
+D <- 110
+S <- 8.25
+H <- 3.75
+
+# given function
+C <- function(Q) { D/Q * S + Q/2 * H }
+
+# derive with R package
+C_prime <- Deriv(C, "Q")
+
+# Solve for Q > 0 with interval of at least 1 unit up to the total demand
+Q_opt <- uniroot(C_prime, interval = c(1, D))$root
+Q_opt
+
+N_orders <- D / Q_opt
+N_orders
+```
+
+
 ### Question 2 Revenue Maximization
 
 Scenario: A company is running an online advertising campaign. The effectiveness of the campaign, in terms of revenue generated per day, is modeled by the function:
@@ -206,6 +317,20 @@ Where:
 
 Task: Determine the time t at which the revenue is maximized by finding the critical points of the revenue function and determining which point provides the maximum value. What is the maximum revenue the company can expect from this campaign?
 
+**ANSWER:**
+
+```{r}
+R_32 <- function(t) { -3150 * t^(-4) - 220 * t + 6530 }
+
+R_32_prime <- Deriv(R_32, "t")
+
+# dummy interval
+t_32 <- uniroot(R_32_prime, interval = c(0.1, 10))$root
+
+max_revenue_32 <- R(t_32)
+max_revenue_32
+```
+
 ### Question 3 Demand Area Under Curve
 
 Scenario: A company sells a product at a price that decreases over time according to the linear demand function:
@@ -217,6 +342,15 @@ Where:
 P(x) is the price in dollars, and x is the quantity sold.
 
 Task: The company is interested in calculating the total revenue generated by this product between two quantity levels, x_1 = 2 and x_2 = 5, where the price still generates sales. Compute the area under the demand curve between these two points, representing the total revenue generated over this range.
+
+**ANSWER:**
+
+```{r}
+P_33 <- function(x) { 2*x - 9.3 }
+
+rev_33 <- integrate(P_33, lower = 2, upper = 5)
+rev_33$value
+```
 
 ### Question 4 Profit Optimization
 
@@ -231,6 +365,18 @@ Where:
 
 Task: Use calculus to find the value of x that maximizes profit. Calculate the maximum profit that can be achieved and determine if this optimal sales level is feasible given market conditions.
 
+**ANSWER:**
+
+```{r}
+pi_34 <- function(x) { (x * log(9*x)) - (x^6) / 6 }
+pi_34_deriv <- function(x) { log(9*x) + 1 - (x^5) }
+
+x_34 <- uniroot(pi_34_deriv, c(0.1, 10))$root
+
+max_profit_34 <- pi_34(x_34)
+max_profit_34
+```
+
 ### Question 5 Spending Behavior
 
 Scenario: A market research firm is analyzing the spending behavior of customers in a retail store. The spending behavior is modeled by the probability density function:
@@ -241,6 +387,17 @@ Where x represents spending in dollars.
 
 Task: Determine whether this function is a valid probability density function over the interval [1, e^6]. If it is, calculate the probability that a customer spends between $1 and $e^6.
 
+**ANSWER:**
+
+The given function not a valid PDF because the integral does not equal 1.
+
+```{r}
+f_35 <- function(x) { x / 6 }
+
+check_valid_35 <- integrate(f_35, lower = 1, upper = exp(6))$value
+print(check_valid_35 == 1)
+```
+
 ### Question 6 Market Share Estimation
 
 Scenario: An electronics company is analyzing its market share over a certain period. The rate of market penetration is given by:
@@ -250,6 +407,23 @@ dN/dt = 500/(t^4 + 10)
 Where N(t) is the cumulative market share at time t.
 
 Task: Integrate this function to find the cumulative market share N(t) after t days, given that the initial market share N(1) = 6530. What will the market share be after 10 days?
+
+**ANSWER:**
+
+```{r}
+dNdt_36 <- function(t) { 500 / (t^4 + 10) }
+
+N1_36 <- 6530
+t1_36 <- 1
+
+N_36 <- function(t) {
+  integral_36 <- integrate(dNdt_36, lower = t1_36, upper = t)$value
+  N1_36 + integral_36
+}
+
+N_36(10)
+```
+
 
 # Problem 4 Business Optimization
 
@@ -264,11 +438,43 @@ Task:
 
 1. Approximate the Revenue Function: Use the Taylor Series expansion around x = 0 (Maclaurin series) to approximate the revenue function R(x) = e^x up to the second degree. Explain why this approximation might be useful in a business context.
 
+**ANSWER:**
+
+The below returns the coefficients in descending order, so the revenue function is 1 + x + (x^2)/2. In business contexts, this type of function is simple and quick to implement for estimates and easy to explain.
+
+```{r}
+library(pracma)
+
+R_41 <- function(x) { exp(x) }
+
+taylor(R_41, 0, n = 2)
+```
+
 2. Approximate the Cost Function: Similarly, approximate the cost function C(x) = ln(1 + x) using its Maclaurin series expansion up to the second degree. Discuss the implications of this approximation for decision-making in production.
+
+**ANSWER:**
+
+The cost function is x - (x^2)/2. This is also simpler and easier to interpret.
+
+```{r}
+C_42 <- function(x) { log(1 + x) }
+
+taylor(C_42, 0, n = 2)
+```
 
 3. Linear vs. Nonlinear Optimization: Using the Taylor Series expansions, approximate the profit function II(x). Compare the optimization results when using the linear approximations versus the original nonlinear functions. What are the differences, and when might it be more appropriate to use the approximation?
 
 Submission: Provide your solutions using R-Markdown. Include the Taylor Series expansions, the approximated functions, and a discussion of the implications of using these approximations for business decision-making.
+
+**ANSWER:**
+
+```{r}
+Pi_43 <- function(x) { exp(x) - log(1 + x) }
+
+taylor(Pi_43, 0, n = 2)
+
+Pi_43_exp <- function(x) { }
+```
 
 ### Question 2 Financial Modeling
 
@@ -278,11 +484,35 @@ Task:
 
 1. Maclaurin Series Expansion: Derive the Taylor Series expansion of f(x) = sqrt(x) around x = 0 up to the second degree.
 
+**ANSWER:**
+
+This errors since the square root cannot be expanded at 0.
+
+```{r}
+F_42 <- function(x) { sqrt(x) }
+
+taylor(F_42, 0, n = 2)
+```
+
 2. Practical Application: Use the derived series to approximate the risk for small investment amounts (e.g., when x is small). Compare the approximated risk with the actual function values for small and moderate investments. Discuss when this approximation might be useful in financial modeling.
+
+**ANSWER:**
+
+```{r}
+F_42b <- function(x) { sqrt(x) }
+
+taylor(F_42, 1, n = 2)
+```
 
 3. Optimization Scenario: Suppose the goal is to minimize risk while maintaining a certain level of investment return. Using the Taylor Series approximation, suggest an optimal investment amount x that balances risk and return.
 
 Submission: Present your results in R-Markdown, including the Taylor Series expansions, comparisons between the original and approximated functions, and your recommendations based on the analysis.
+
+**ANSWER:**
+
+```{r}
+
+```
 
 ### Question 3 Inventory Management
 
@@ -292,11 +522,30 @@ Task:
 
 1. Taylor Series Expansion: Expand the cost function C(p) = e^p into a Taylor Series around p = 0 up to the second degree. Discuss why approximating the cost function might be useful in a pricing strategy.
 
+**ANSWER:**
+
+```{r}
+
+```
+
 2. Approximating Profit: Using the Taylor Series expansion, approximate the profit function II(p) = pD(p) - C(p). Compare the results when using the original nonlinear cost function versus the approximated cost function. What differences do you observe, and when might the approximation be sufficient?
+
+**ANSWER:**
+
+```{r}
+
+```
 
 Pricing Strategy: Based on the Taylor Series approximation, suggest a pricing strategy that could maximize profit. Explain how the Taylor Series approximation helps in making this decision.
 
 Submission: Include your analysis in R-Markdown, with Taylor Series expansions, comparisons of the approximated and original functions, and a discussion of the implications for pricing strategy.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 
 ### Question 4 Economic Forecasting
 
@@ -306,11 +555,30 @@ Task:
 
 1. Maclaurin Series Expansion: Derive the Maclaurin Series expansion of G(x) = ln(1 + x) up to the second degree. Explain the significance of using this approximation for small values of x_x in economic forecasting.
 
+**ANSWER:**
+
+```{r}
+
+```
+
 2. Approximation of Growth: Use the Taylor Series to approximate the growth for small investments. Compare this approximation with the actual growth function. Discuss the accuracy of the approximation for different ranges of x_x.
+
+**ANSWER:**
+
+```{r}
+
+```
 
 3. Policy Recommendation: Using the approximation, recommend a level of investment that could achieve a target growth rate. Discuss the limitations of using Taylor Series approximations for such policy recommendations.
 
 Submission: Provide your answers in R-Markdown, with the Taylor Series expansions, comparisons between the approximated and original functions, and your investment recommendations.
+
+**ANSWER:**
+
+```{r}
+
+```
+
 
 # Problem 5 Profit, Cost, & Pricing
 
@@ -330,9 +598,15 @@ Task:
 
 1. Find all local maxima, local minima, and saddle points for the profit function II(x, y).
 
-2.Write your answer(s) in the form (x, y, II(x, y)). Separate multiple points with a comma.
+2. Write your answer(s) in the form (x, y, II(x, y)). Separate multiple points with a comma.
 
 Discussion: Discuss the implications of the results for the company’s production strategy. Which production levels maximize profit, and what risks are associated with the saddle points?
+
+**ANSWER:**
+
+```{r}
+
+```
 
 ### Question 2 Pricing Strategy
 
@@ -354,6 +628,12 @@ Task:
 
 Discussion: Explain the significance of the optimal pricing strategy and how it can be applied in a competitive retail environment.
 
+**ANSWER:**
+
+```{r}
+
+```
+
 ### Question 3 Cost Minimization
 
 Scenario: A manufacturing company operates two plants, one in New York and one in Chicago. The company needs to produce a total of 200 units of a product each week. The total weekly cost of production is given by:
@@ -373,6 +653,13 @@ Task:
 
 Discussion: Discuss the benefits of this cost-minimization strategy and any practical considerations that might influence the allocation of production between the two plants.
 
+**ANSWER:**
+
+```{r}
+
+```
+
+
 ### Question 4 Marketing Mix
 
 Scenario: A company is launching a marketing campaign that involves spending on online ads (x) and television ads (y). The effectiveness of the campaign, measured in customer reach, is modeled by the function:
@@ -391,3 +678,9 @@ Task:
 2. Identify any saddle points and discuss how they could affect the marketing strategy.
 
 Discussion: Explain how the results can be used to allocate the marketing budget effectively and what the company should consider if it encounters saddle points in the optimization.
+
+**ANSWER:**
+
+```{r}
+
+```
