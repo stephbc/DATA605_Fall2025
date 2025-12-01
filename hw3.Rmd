@@ -229,6 +229,8 @@ Task: Build a multiple regression model to investigate the combined effect of th
 
 **ANSWER:**
 
+The R-squared of 0.2996 with adjusted 0.2921 means the model explains around 30% of variation. F-statistic of 39.99 with p of 3.48e-15 means the model is highly significant overall. Residual SE of 9.127id lightly lower than single predictor model indicating better fit.
+
 ```{r}
 who_mod3 <- lm(LifeExp ~ TotExp + PropMD, data = who)
 summary(who_mod3)
@@ -367,12 +369,19 @@ Task: Use calculus to find the value of x that maximizes profit. Calculate the m
 
 **ANSWER:**
 
+The x that maximizes profit is about 1.28 and the max profit is about 2.4.
+
 ```{r}
 pi_34 <- function(x) { (x * log(9*x)) - (x^6) / 6 }
+
+# derivative
 pi_34_deriv <- function(x) { log(9*x) + 1 - (x^5) }
 
+# find root/x
 x_34 <- uniroot(pi_34_deriv, c(0.1, 10))$root
+x_34
 
+# plug in x to original function
 max_profit_34 <- pi_34(x_34)
 max_profit_34
 ```
@@ -413,6 +422,7 @@ Task: Integrate this function to find the cumulative market share N(t) after t d
 ```{r}
 dNdt_36 <- function(t) { 500 / (t^4 + 10) }
 
+# initial share, 1st day
 N1_36 <- 6530
 t1_36 <- 1
 
@@ -440,7 +450,9 @@ Task:
 
 **ANSWER:**
 
-The below returns the coefficients in descending order, so the revenue function is 1 + x + (x^2)/2. In business contexts, this type of function is simple and quick to implement for estimates and easy to explain.
+The below returns the coefficients in descending order, so the approx revenue function is 1 + x + (x^2)/2.
+
+In business contexts, this type of function is simple and quick to implement for estimates and easy to explain.
 
 ```{r}
 library(pracma)
@@ -454,7 +466,7 @@ taylor(R_41, 0, n = 2)
 
 **ANSWER:**
 
-The cost function is x - (x^2)/2. This is also simpler and easier to interpret.
+The approx cost function is x - (x^2)/2.
 
 ```{r}
 C_42 <- function(x) { log(1 + x) }
@@ -468,12 +480,22 @@ Submission: Provide your solutions using R-Markdown. Include the Taylor Series e
 
 **ANSWER:**
 
+Combining the above (1 + x + (x^2)/2) - (x - (x^2)/2), we get 1 + x^2.
+
 ```{r}
-Pi_43 <- function(x) { exp(x) - log(1 + x) }
+Pi_42_approx <- function(x) { 1 + x^2 }
+uniroot(Deriv(Pi_42_approx, "x"), c(0, 2))$root
 
-taylor(Pi_43, 0, n = 2)
+# original nonlinear function
+Pi_42 <- function(x) { exp(x) - log(1 + x) }
 
-Pi_43_exp <- function(x) { }
+# derive
+Pi_42_prime <- Deriv(Pi_42, "x")
+Pi_42_prime
+
+# optimal x
+x_42 <- uniroot(Pi_42_prime, c(0, 2))$root
+x_42
 ```
 
 ### Question 2 Financial Modeling
@@ -524,8 +546,12 @@ Task:
 
 **ANSWER:**
 
-```{r}
+1 + p + (p^2)/2
 
+```{r}
+C_43 <- function(p) { exp(p) }
+
+taylor(C_43, 0, n = 2)
 ```
 
 2. Approximating Profit: Using the Taylor Series expansion, approximate the profit function II(p) = pD(p) - C(p). Compare the results when using the original nonlinear cost function versus the approximated cost function. What differences do you observe, and when might the approximation be sufficient?
@@ -533,7 +559,12 @@ Task:
 **ANSWER:**
 
 ```{r}
+C_43b <- function(p) { p*(1 - p) - exp(p) }
 
+C_43b_prime <- function(p) 1 - 2*p - exp(p)
+
+opt_price <- uniroot(C_43b_prime, c(0, 1))$root
+opt_price
 ```
 
 Pricing Strategy: Based on the Taylor Series approximation, suggest a pricing strategy that could maximize profit. Explain how the Taylor Series approximation helps in making this decision.
@@ -542,9 +573,6 @@ Submission: Include your analysis in R-Markdown, with Taylor Series expansions, 
 
 **ANSWER:**
 
-```{r}
-
-```
 
 
 ### Question 4 Economic Forecasting
@@ -557,8 +585,12 @@ Task:
 
 **ANSWER:**
 
-```{r}
+x - (x^2)/2
 
+```{r}
+G_44 <- function(x) { log(1 + x) }
+
+taylor(G_44, 0, n = 2)
 ```
 
 2. Approximation of Growth: Use the Taylor Series to approximate the growth for small investments. Compare this approximation with the actual growth function. Discuss the accuracy of the approximation for different ranges of x_x.
@@ -566,7 +598,11 @@ Task:
 **ANSWER:**
 
 ```{r}
+G_44_taylor <- function(x) { x - 0.5*(x^2)}
 
+x_44 <- seq(0, 1, by = 0.01)
+
+mean(G_44(x_44) - G_44_taylor(x_44))
 ```
 
 3. Policy Recommendation: Using the approximation, recommend a level of investment that could achieve a target growth rate. Discuss the limitations of using Taylor Series approximations for such policy recommendations.
@@ -682,5 +718,14 @@ Discussion: Explain how the results can be used to allocate the marketing budget
 **ANSWER:**
 
 ```{r}
+E_54 <- function(x, y) { 500*x + 700*y - 5*(x^2) - 10*x*y - 8*(y^2) }
 
+x_opt <- (700*10 - 500*16)/(10*16 - 10*10)
+y_opt <- 50 - x_opt
+
+x_opt
+y_opt
+
+E_max <- E(x_opt, y_opt)
+E_max
 ```
