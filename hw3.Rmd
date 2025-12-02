@@ -321,6 +321,8 @@ Task: Determine the time t at which the revenue is maximized by finding the crit
 
 **ANSWER:**
 
+The t is 2.24 days for a max revenue of 5912.09.
+
 ```{r}
 R_32 <- function(t) { -3150 * t^(-4) - 220 * t + 6530 }
 
@@ -328,9 +330,10 @@ R_32_prime <- Deriv(R_32, "t")
 
 # dummy interval to find root
 t_32 <- uniroot(R_32_prime, interval = c(0.1, 10))$root
+t_32
 
 # plug in to original function for max
-max_revenue_32 <- R(t_32)
+max_revenue_32 <- R_32(t_32)
 max_revenue_32
 ```
 
@@ -506,7 +509,7 @@ This errors since the square root function is not differentiable when x = 0.
 ```{r}
 F_42 <- function(x) { sqrt(x) }
 
-taylor(F_42, 0, n = 2)
+# taylor(F_42, 0, n = 2)
 ```
 
 2. Practical Application: Use the derived series to approximate the risk for small investment amounts (e.g., when x is small). Compare the approximated risk with the actual function values for small and moderate investments. Discuss when this approximation might be useful in financial modeling.
@@ -658,7 +661,7 @@ Submission: Provide your answers in R-Markdown, with the Taylor Series expansion
 
 **ANSWER:**
 
-To solve for 0.5*x^2 - x = G_target, we can use the quadratic formula to get a target growth:
+To solve for 0.5*x^2 - x = G_target, we can use the quadratic formula to get the investment level for a sample target growth of 5%:
 
 ```{r}
 target <- 0.05
@@ -703,7 +706,9 @@ Using `optim()`, which minimizes a function, we can negate the profit to maximiz
 
 (x, y, II(x, y)) = (7.30, 0.26, 112.6957)
 
-This means we need about 7.3 units of x or Product A and 0.26 units of y or Product B to maximize profit, so we should focus on Product A to maximize profit.
+This means we need about 7.3 units of x or Product A and 0.26 units of y or Product B to maximize profit. 
+
+In a real-world scenario, we would focus on Product A to maximize profit.
 
 ```{r}
 profit_51 <- function(vars) {
@@ -713,7 +718,7 @@ profit_51 <- function(vars) {
 }
 
 # initial guess of 1 each
-result_51 <- optim(c(x = 1, y = 1), profit)
+result_51 <- optim(c(x = 1, y = 1), profit_51)
 result_51
 ```
 
