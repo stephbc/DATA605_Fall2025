@@ -326,9 +326,10 @@ R_32 <- function(t) { -3150 * t^(-4) - 220 * t + 6530 }
 
 R_32_prime <- Deriv(R_32, "t")
 
-# dummy interval
+# dummy interval to find root
 t_32 <- uniroot(R_32_prime, interval = c(0.1, 10))$root
 
+# plug in to original function for max
 max_revenue_32 <- R(t_32)
 max_revenue_32
 ```
@@ -369,7 +370,7 @@ Task: Use calculus to find the value of x that maximizes profit. Calculate the m
 
 **ANSWER:**
 
-The x that maximizes profit is about 1.28 and the max profit is about 2.4.
+The x that maximizes profit is about 1.28 and the max profit is about 2.4. Since flat irons can only be sold in whole units, this max profit is not feasible, the actual value would be slightly lower.
 
 ```{r}
 pi_34 <- function(x) { (x * log(9*x)) - (x^6) / 6 }
@@ -377,11 +378,9 @@ pi_34 <- function(x) { (x * log(9*x)) - (x^6) / 6 }
 # derivative
 pi_34_deriv <- function(x) { log(9*x) + 1 - (x^5) }
 
-# find root/x
 x_34 <- uniroot(pi_34_deriv, c(0.1, 10))$root
 x_34
 
-# plug in x to original function
 max_profit_34 <- pi_34(x_34)
 max_profit_34
 ```
@@ -422,16 +421,8 @@ Task: Integrate this function to find the cumulative market share N(t) after t d
 ```{r}
 dNdt_36 <- function(t) { 500 / (t^4 + 10) }
 
-# initial share, 1st day
-N1_36 <- 6530
-t1_36 <- 1
-
-N_36 <- function(t) {
-  integral_36 <- integrate(dNdt_36, lower = t1_36, upper = t)$value
-  N1_36 + integral_36
-}
-
-N_36(10)
+integral_36 <- integrate(dNdt_36, lower = 1, upper = 10)$value
+print(6530 + integral_36)
 ```
 
 
@@ -450,9 +441,11 @@ Task:
 
 **ANSWER:**
 
-The below returns the coefficients in descending order, so the approx revenue function is 1 + x + (x^2)/2.
+The below returns the coefficients in descending order, so the approx revenue function is:
 
-In business contexts, this type of function is simple and quick to implement for estimates and easy to explain.
+1 + x + (x^2)/2.
+
+In business contexts, this type of function is simple and quick to implement for estimates on smaller amounts of data and easy to explain.
 
 ```{r}
 library(pracma)
@@ -466,7 +459,9 @@ taylor(R_41, 0, n = 2)
 
 **ANSWER:**
 
-The approx cost function is x - (x^2)/2.
+The approx cost function is:
+
+x - (x^2)/2.
 
 ```{r}
 C_42 <- function(x) { log(1 + x) }
@@ -476,26 +471,24 @@ taylor(C_42, 0, n = 2)
 
 3. Linear vs. Nonlinear Optimization: Using the Taylor Series expansions, approximate the profit function II(x). Compare the optimization results when using the linear approximations versus the original nonlinear functions. What are the differences, and when might it be more appropriate to use the approximation?
 
-Submission: Provide your solutions using R-Markdown. Include the Taylor Series expansions, the approximated functions, and a discussion of the implications of using these approximations for business decision-making.
-
 **ANSWER:**
 
-Combining the above (1 + x + (x^2)/2) - (x - (x^2)/2), we get 1 + x^2.
+Combining the above (1 + x + (x^2)/2) - (x - (x^2)/2), we get the approximated profit function:
+
+1 + x^2.
+
+The optimal x for each function below is 0. This implies that the product is not profitable at all.
 
 ```{r}
+# approximate
 Pi_42_approx <- function(x) { 1 + x^2 }
-uniroot(Deriv(Pi_42_approx, "x"), c(0, 2))$root
+x_42_l <- uniroot(Deriv(Pi_42_approx, "x"), c(0, 2))$root
+x_42_l
 
 # original nonlinear function
 Pi_42 <- function(x) { exp(x) - log(1 + x) }
-
-# derive
-Pi_42_prime <- Deriv(Pi_42, "x")
-Pi_42_prime
-
-# optimal x
-x_42 <- uniroot(Pi_42_prime, c(0, 2))$root
-x_42
+x_42_nl <- uniroot(Deriv(Pi_42, "x"), c(0, 2))$root
+x_42_nl
 ```
 
 ### Question 2 Financial Modeling
@@ -508,7 +501,7 @@ Task:
 
 **ANSWER:**
 
-This errors since the square root cannot be expanded at 0.
+This errors since the square root function is not differentiable when x = 0.
 
 ```{r}
 F_42 <- function(x) { sqrt(x) }
@@ -520,20 +513,43 @@ taylor(F_42, 0, n = 2)
 
 **ANSWER:**
 
-```{r}
-F_42b <- function(x) { sqrt(x) }
+The below approx function is 1 + 0.5x - 0.125(x^2).
 
-taylor(F_42, 1, n = 2)
+The results show that for small amounts, the Taylor approx overestimates, but as the investment amounts increase, the differences between the actual and approx risks decrease. 
+
+```{r}
+F_42b <- function(x) { sqrt(1 + x) }
+taylor(F_42b, 0, n = 2)
+
+t_F42b <- function(x) { 1 + 0.5*x - 0.125*(x^2) }
+
+x_42b <- c(0.01, 0.05, 0.1, 0.2, 0.5, 1)
+
+data.frame(
+  x = x_42b,
+  actual = F_42(x_42b),
+  approx = t_F42b(x_42b),
+  error = F_42(x_42b) - t_F42b(x_42b)
+)
 ```
 
 3. Optimization Scenario: Suppose the goal is to minimize risk while maintaining a certain level of investment return. Using the Taylor Series approximation, suggest an optimal investment amount x that balances risk and return.
 
-Submission: Present your results in R-Markdown, including the Taylor Series expansions, comparisons between the original and approximated functions, and your recommendations based on the analysis.
-
 **ANSWER:**
 
-```{r}
+So we can take, for example, a simple linear return and subtract the approximate risk times a dummy risk aversion parameter of 2.5, for a balance of risk and return. The optimal investment comes to 0.4 units.
 
+```{r}
+return_lin <- function(x) { x }
+ra <- 2.5
+opt_43 <- function(x) { return_lin(x) - ra * t_F42b(x) }
+
+opt_43_deriv <- Deriv(opt_43, "x")
+
+# interval for small investments
+x_43 <- uniroot(opt_43_deriv, c(0, 2))$root
+
+x_43
 ```
 
 ### Question 3 Inventory Management
@@ -546,7 +562,11 @@ Task:
 
 **ANSWER:**
 
+The expanded cost function is:
+
 1 + p + (p^2)/2
+
+This could be useful in pricing strategy because it simplifies profit maximization and provides clear insights.
 
 ```{r}
 C_43 <- function(p) { exp(p) }
@@ -558,22 +578,43 @@ taylor(C_43, 0, n = 2)
 
 **ANSWER:**
 
+The differences in the resulting profits are very close. This means that approximating the cost function is sufficient and useful in cases like this.
+
 ```{r}
-C_43b <- function(p) { p*(1 - p) - exp(p) }
+D_43b <- function(p) { 1 - p }
+C_43b <- function(p) { exp(p) }
 
-C_43b_prime <- function(p) 1 - 2*p - exp(p)
+# original nonlinear
+Pi_43b_og <- function(p) { p*D_43b(p) - C_43b(p) }
 
-opt_price <- uniroot(C_43b_prime, c(0, 1))$root
-opt_price
+# approx cost Taylor series 
+taylor(C_43b, 0, n = 2)
 ```
 
-Pricing Strategy: Based on the Taylor Series approximation, suggest a pricing strategy that could maximize profit. Explain how the Taylor Series approximation helps in making this decision.
+```{r}
+# approx cost Taylor series 
+C_43b_approx <- function(p) { 1 + p + 0.5*p^2 }
+
+# approx profit function
+Pi_43b_approx <- function(p) { p*D_43b(p) - C_43b_approx(p) }
+
+# compare
+p43_range <-  c(0.01, 0.05, 0.1, 0.2, 0.5, 1)
+
+data.frame(
+  p = p43_range,
+  actual = Pi_43b_og(p43_range),
+  approx = Pi_43b_approx(p43_range)
+)
+```
+
+3. Pricing Strategy: Based on the Taylor Series approximation, suggest a pricing strategy that could maximize profit. Explain how the Taylor Series approximation helps in making this decision.
 
 Submission: Include your analysis in R-Markdown, with Taylor Series expansions, comparisons of the approximated and original functions, and a discussion of the implications for pricing strategy.
 
 **ANSWER:**
 
-
+A pricing strategy here could be to start small and get an optimal price using the simpler polynomial formula to avoid overcharging and reducing profit.
 
 ### Question 4 Economic Forecasting
 
@@ -585,7 +626,11 @@ Task:
 
 **ANSWER:**
 
+This results in: 
+
 x - (x^2)/2
+
+This is simpler to compute with than the logarithmic function and when the x is small, remains an accurate approximation.
 
 ```{r}
 G_44 <- function(x) { log(1 + x) }
@@ -596,6 +641,8 @@ taylor(G_44, 0, n = 2)
 2. Approximation of Growth: Use the Taylor Series to approximate the growth for small investments. Compare this approximation with the actual growth function. Discuss the accuracy of the approximation for different ranges of x_x.
 
 **ANSWER:**
+
+When tested on a set of very small values, the average difference between the approximated values and the actual values is miniscule at 0.05. This means the approximation is useful and accurate. 
 
 ```{r}
 G_44_taylor <- function(x) { x - 0.5*(x^2)}
@@ -611,8 +658,20 @@ Submission: Provide your answers in R-Markdown, with the Taylor Series expansion
 
 **ANSWER:**
 
-```{r}
+To solve for 0.5*x^2 - x = G_target, we can use the quadratic formula to get a target growth:
 
+```{r}
+target <- 0.05
+
+a <- 0.5
+b <- -1
+
+# Solve quadratic: 
+x1 <- (-b + sqrt(b^2 - 4*a*target)) / (2*a)
+x2 <- (-b - sqrt(b^2 - 4*a*target)) / (2*a)
+
+x_invest <- min(x1, x2)
+x_invest
 ```
 
 
@@ -640,16 +699,30 @@ Discussion: Discuss the implications of the results for the company’s producti
 
 **ANSWER:**
 
-```{r}
+Using `optim()`, which minimizes a function, we can negate the profit to maximize it.
 
+(x, y, II(x, y)) = (7.30, 0.26, 112.6957)
+
+This means we need about 7.3 units of x or Product A and 0.26 units of y or Product B to maximize profit, so we should focus on Product A to maximize profit.
+
+```{r}
+profit_51 <- function(vars) {
+  x <- vars[1]
+  y <- vars[2]
+  -(30*x - 2*x^2 - 3*x*y + 24*y - 4*y^2)  # negative for maximization
+}
+
+# initial guess of 1 each
+result_51 <- optim(c(x = 1, y = 1), profit)
+result_51
 ```
 
 ### Question 2 Pricing Strategy
 
 Scenario: A supermarket sells two competing brands of a product: Brand X and Brand Y. The store manager estimates that the demand for these brands depends on their prices, given by the functions:
 
-- Demand for Brand X: 
-- Demand for Brand Y: 
+- Demand for Brand X: D_x(x, y) = 120 - 15x + 10y
+- Demand for Brand Y: D_y(x, y) = 80 + 5x - 20y
 
 Where:
 
@@ -666,8 +739,25 @@ Discussion: Explain the significance of the optimal pricing strategy and how it 
 
 **ANSWER:**
 
-```{r}
+Using the revenue function below, to maximize revenue, X should be priced at 6.15 and Y at 4.31. 
 
+These are competing brands so raising the price of one might affect the sales and profits of the other.
+
+```{r}
+revenue_52 <- function(prices) {
+  x <- prices[1]
+  y <- prices[2]
+  
+  Dx <- 120 - 15*x + 10*y
+  Dy <- 80 + 5*x - 20*y
+  
+  R_total <- x*Dx + y*Dy
+  
+  return(-R_total)
+}
+
+opt_52 <- optim(c(x = 1, y = 1), revenue_52)
+opt_52
 ```
 
 ### Question 3 Cost Minimization
@@ -691,8 +781,26 @@ Discussion: Discuss the benefits of this cost-minimization strategy and any prac
 
 **ANSWER:**
 
-```{r}
+Below the optimization function shows that about 102 units should be produced in NY and the remainder, around 98, should be produced in Chicago. The minimized cost should be around 6748.89.
 
+```{r}
+cost_53 <- function(x) {
+  y <- 200 - x
+  (1/8)*x^2 + (1/10)*y^2 + 12*x + 18*y + 1500
+}
+
+opt_53 <- optimize(cost_53, interval = c(0, 200))
+
+# optimal x
+x_opt53 <- opt_53$minimum
+x_opt53
+
+# corresponding y
+y_opt53 <- 200 - x_opt53
+y_opt53
+
+# min cost
+opt_53$objective
 ```
 
 
@@ -717,15 +825,16 @@ Discussion: Explain how the results can be used to allocate the marketing budget
 
 **ANSWER:**
 
+Optimal spending levels are: 16,667 on online ads and 33,332 on TV ads.
+
 ```{r}
-E_54 <- function(x, y) { 500*x + 700*y - 5*(x^2) - 10*x*y - 8*(y^2) }
+E_54 <- function(vars) {
+  x <- vars[1]
+  y <- vars[2]
+  -(500*x + 700*y - 5*x^2 - 10*x*y - 8*y^2)
+}
 
-x_opt <- (700*10 - 500*16)/(10*16 - 10*10)
-y_opt <- 50 - x_opt
+opt_54 <- optim(c(x = 1, y = 1), E_54)
 
-x_opt
-y_opt
-
-E_max <- E(x_opt, y_opt)
-E_max
+opt_54
 ```
